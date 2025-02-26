@@ -5,7 +5,6 @@ import { EventEmitter } from 'events-light'
 import { eventBus } from '../../_utils/eventBus.js'
 import { safeParse } from '../../_utils/safeParse.js'
 import { getStatus } from '../statuses.js' // Import getStatus
-import { eventHandlers } from '../../../__sapper__/client.js';
 
 export class TimelineStream extends EventEmitter {
   constructor (streamingApi, accessToken, timeline) {

@@ -4,6 +4,8 @@ import { getStreamUrl } from './getStreamUrl.js'
 import { EventEmitter } from 'events-light'
 import { eventBus } from '../../_utils/eventBus.js'
 import { safeParse } from '../../_utils/safeParse.js'
+import { getStatus } from '../statuses.js' // Import getStatus
+import { eventHandlers } from '../../../__sapper__/client.js';
 
 export class TimelineStream extends EventEmitter {
   constructor (streamingApi, accessToken, timeline) {
@@ -55,13 +57,36 @@ export class TimelineStream extends EventEmitter {
         this.emit('reconnect')
       }
     }
-    ws.onmessage = (e) => this.emit('message', safeParse(e.data))
+    ws.onmessage = (e) => this._handleMessage(e); //change this line to use _handleMessage
     ws.onclose = () => this.emit('close')
     // The ws "onreconnect" event seems unreliable. When the server goes down and comes back up,
     // it doesn't fire (but "open" does). When we freeze and unfreeze, it fires along with the
     // "open" event. The above is my attempt to normalize it.
 
     this._ws = ws
+  }
+
+  async _handleMessage (e){ //add this function
+    const message = safeParse(e.data);
+    //get instanceName and accessToken
+    const instanceName = window.location.host; // this may need to be changed.
+    const accessToken = window.localStorage.access_token; // This may also need to be changed.
+
+    // Check if the message has a 'payload' property, and if it can be parsed as JSON.
+    if (message.payload) {
+        const payload = safeParse(message.payload);
+        if (payload.id) {
+            const fullPost = await getStatus(instanceName, accessToken, payload.id);
+            if (fullPost.media_attachments && fullPost.media_attachments.length > 0) {
+                const hasImage = fullPost.media_attachments.some(attachment => attachment.type === "image");
+                if (hasImage) {
+                    this.emit('message', message);
+                }
+            }
+        }
+    } else {
+      this.emit('message', message);
+    }
   }
 
   _setupEvents () {

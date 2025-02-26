@@ -1,3 +1,4 @@
+import { getStatus } from './statuses.js'
 import { getWithHeaders, paramsString, DEFAULT_TIMEOUT } from '../_utils/ajax.js'
 import { auth, basename } from './utils.js'
 
@@ -77,5 +78,20 @@ export async function getTimeline (instanceName, accessToken, timeline, maxId, s
   if (timeline === 'direct') {
     items = items.map(item => item.last_status).filter(Boolean) // ignore falsy last_status'es
   }
-  return { items, headers }
+
+  const postsWithImages = await filterPostsWithImages(instanceName, accessToken, items);
+  return { items: postsWithImages, headers }
+}
+async function filterPostsWithImages(instanceName, accessToken, posts) {
+  const filteredPosts = [];
+  for(const post of posts) {
+    const fullPost = await getStatus(instanceName, accessToken, post.id);
+    if (fullPost.media_attachments && fullPost.media_attachments.length > 0) {
+        const hasImage = fullPost.media_attachments.some(attachment => attachment.type === "image");
+        if (hasImage) {
+          filteredPosts.push(post);
+        }
+    }
+  }
+  return filteredPosts;
 }

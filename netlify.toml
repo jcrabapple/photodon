@@ -1,0 +1,5 @@
+[build]
+  command = "npm run export"
+  publish = "__sapper__/export"
+  # Set the node version in the following line
+  environment = { NODE_VERSION = "18.19.1" } # or 16.20.2, 14.21.3, 12.22.12
